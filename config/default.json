@@ -1,0 +1,10 @@
+{
+    "mailgun": {
+        "api_key": "",
+        "domain": ""
+    }, 
+    "reply": {
+        "sender": "",
+        "template": "./config/template.html"
+    }
+}

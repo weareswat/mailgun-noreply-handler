@@ -8,6 +8,10 @@ var api_key = config.get('mailgun.api_key');
 var domain = config.get('mailgun.domain');
 var senderEmail = config.get('reply.sender');
 
+var config_test = config.get('config_test');
+var config_test2 = process.env.config_test2;
+console.log('config_test = %s, config_test2 = %s', config_test, config_test2);
+
 console.log('Init mailgun. api_key=%s domain=%s sender=%s', api_key, domain, senderEmail);
 
 var mailgun = require('mailgun-js')({apiKey: api_key, domain: domain});

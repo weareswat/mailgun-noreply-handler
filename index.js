@@ -72,8 +72,8 @@ function isCachedEmail(fromEmail) {
     if (cache.get(fromEmail) != null)
         return true;
     
-    // Cache for 1 hour
-    cache.put(fromEmail, '1', 3600000);
+    // Cache for 15 minutes. Why 15 minutes? No particular reason, seems like a good number.
+    cache.put(fromEmail, '1', 900000);
     return false;
 }
 

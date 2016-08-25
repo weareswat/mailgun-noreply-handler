@@ -6,5 +6,8 @@
     "reply": {
         "sender": "",
         "template": "./config/template.html"
+    },
+    "bugsnag": {
+        "api_key": ""
     }
 }

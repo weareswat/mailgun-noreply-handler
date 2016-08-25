@@ -3,12 +3,18 @@ var app = express();
 var bodyParser = require('body-parser');
 var config = require('config');
 var fs = require('fs');
+var bugsnag = require('bugsnag');
 
 // Easier to work with Azure App settings
 function getConfig(key) {
     var configVal = config.has(key) ? config.get(key) : '';
     return process.env[key] || configVal;
 }
+
+// We use bugsnag for error reporting
+bugsnag.register(getConfig("bugsnag.api_key"));
+app.use(bugsnag.requestHandler);
+app.use(bugsnag.errorHandler);
 
 var api_key = getConfig('mailgun.api_key');
 var domain = getConfig('mailgun.domain');
@@ -43,11 +49,16 @@ app.post('/', urlencodedParser, function(req, res) {
 
     if (!hasLoops && !isCached) {
         sendMessage(req.body['from'], req.body['subject'], req.body['body-html'], function(err) {
-            res.send({status: 'replied'});
+            if(err != null) {
+                bugsnag.notify(err);
+                res.status(500).send({error: err});
+            } else {
+                res.send({action: 'replied'}); 
+            }
         });
     } else {
         console.log('skipping');
-        res.send({status: 'skipped'});
+        res.send({action: 'skipped'});
     }
     
 });

@@ -4,18 +4,31 @@ var bodyParser = require('body-parser');
 var config = require('config');
 var fs = require('fs');
 var bugsnag = require('bugsnag');
+var librato = require('librato-node');
 
-// Easier to work with Azure App settings
+// Safely ignore this. Easier to work with Azure App settings
 function getConfig(key) {
     var configVal = config.has(key) ? config.get(key) : '';
     return process.env[key] || configVal;
 }
 
-// We use bugsnag for error reporting
+// Safely ignore this. We use bugsnag for error reporting
 bugsnag.register(getConfig("bugsnag.api_key"));
 app.use(bugsnag.requestHandler);
 app.use(bugsnag.errorHandler);
 
+// Safely ignore this. We use librato for data collection. 
+librato.configure({email: getConfig("librato.email"), token: getConfig("librato.token")});
+librato.start();
+process.once('SIGINT', function() {
+  librato.stop();
+  process.exit();
+});
+librato.on('error', function(err) {
+  console.error(err);
+});
+
+// This is where the fun begins
 var api_key = getConfig('mailgun.api_key');
 var domain = getConfig('mailgun.domain');
 var senderEmail = getConfig('reply.sender');
@@ -37,6 +50,8 @@ console.log('Using template in %s', templatePath);
 var template = fs.readFileSync(templatePath, 'utf8');
 
 app.post('/', urlencodedParser, function(req, res) {
+    librato.increment('mailgun-noreply-requests');
+
     var fromEmail = req.body['from'];
     
     // This makes us well behaved. Don't reply if any of these headers are present.
@@ -53,11 +68,13 @@ app.post('/', urlencodedParser, function(req, res) {
                 bugsnag.notify(err);
                 res.status(500).send({error: err});
             } else {
+                librato.increment('mailgun-noreply-replied');
                 res.send({action: 'replied'}); 
             }
         });
     } else {
         console.log('skipping');
+        librato.increment('mailgun-noreply-skipped');
         res.send({action: 'skipped'});
     }
     

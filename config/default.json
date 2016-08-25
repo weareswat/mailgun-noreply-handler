@@ -9,5 +9,9 @@
     },
     "bugsnag": {
         "api_key": ""
+    }, 
+    "librato": {
+        "email": "",
+        "token": ""
     }
 }

@@ -1,6 +1,4 @@
 {
-    "config_test": "",
-    "config_test2": "",
     "mailgun": {
         "api_key": "",
         "domain": ""

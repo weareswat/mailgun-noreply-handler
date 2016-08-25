@@ -4,13 +4,15 @@ var bodyParser = require('body-parser');
 var config = require('config');
 var fs = require('fs');
 
-var api_key = config.get('mailgun.api_key');
-var domain = config.get('mailgun.domain');
-var senderEmail = config.get('reply.sender');
+// Easier to work with Azure App settings
+function getConfig(key) {
+    var configVal = config.has(key) ? config.get(key) : '';
+    return process.env[key] || configVal;
+}
 
-var config_test = config.get('config_test');
-var config_test2 = process.env.config_test2;
-console.log('config_test = %s, config_test2 = %s', config_test, config_test2);
+var api_key = getConfig('mailgun.api_key');
+var domain = getConfig('mailgun.domain');
+var senderEmail = getConfig('reply.sender');
 
 console.log('Init mailgun. api_key=%s domain=%s sender=%s', api_key, domain, senderEmail);
 
@@ -24,7 +26,7 @@ var jsonParser = bodyParser.json();
 // create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-var templatePath = config.get('reply.template');
+var templatePath = getConfig('reply.template');
 console.log('Using template in %s', templatePath);
 var template = fs.readFileSync(templatePath, 'utf8');
 

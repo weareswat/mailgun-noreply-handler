@@ -31,7 +31,11 @@ Configuration can be found in `config/default.json`. I used the `config` npm pac
 
 Here's an example using parameters:
 
-    npm start -- --NODE_CONFIG='{"mailgun":{"api_key":"your_mailgun_api_key", "domain":"example.com"}, "reply":{"sender":"noreply@example.com"}, "bugsnag":{"api_key": "optional_your_bugsnag_api_key"}}'
+    npm start -- --NODE_CONFIG='{"mailgun":{"api_key":"your_mailgun_api_key", "domain":"example.com"}, "reply":{"sender":"noreply@example.com"}}'
+
+The full list of params that can be specified includes Bugsnag and Librato, but feel free to ignore them if you don't use them. 
+
+    npm start -- --NODE_CONFIG='{"mailgun":{"api_key":"your_mailgun_api_key", "domain":"example.com"}, "reply":{"sender":"noreply@example.com"}, "bugsnag":{"api_key": "your_bugsnag_api_key"}, "librato": {"email":"your_librato_account", "token":"your_token"}}'
     
 ## Additional notes
 

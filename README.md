@@ -31,7 +31,7 @@ Configuration can be found in `config/default.json`. I used the `config` npm pac
 
 Here's an example using parameters:
 
-    npm start -- --NODE_CONFIG='{"mailgun":{"api_key":"your_mailgun_api_key", "domain":"example.com"}, "reply":{"sender":"noreply@example.com"}}'
+    npm start -- --NODE_CONFIG='{"mailgun":{"api_key":"your_mailgun_api_key", "domain":"example.com"}, "reply":{"sender":"noreply@example.com"}, "bugsnag":{"api_key": "optional_your_bugsnag_api_key"}}'
     
 ## Additional notes
 

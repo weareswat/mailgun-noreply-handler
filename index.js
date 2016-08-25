@@ -3,10 +3,35 @@ var app = express();
 var bodyParser = require('body-parser');
 var config = require('config');
 var fs = require('fs');
+var bugsnag = require('bugsnag');
+var librato = require('librato-node');
 
-var api_key = config.get('mailgun.api_key');
-var domain = config.get('mailgun.domain');
-var senderEmail = config.get('reply.sender');
+// Safely ignore this. Easier to work with Azure App settings
+function getConfig(key) {
+    var configVal = config.has(key) ? config.get(key) : '';
+    return process.env[key] || configVal;
+}
+
+// Safely ignore this. We use bugsnag for error reporting
+bugsnag.register(getConfig("bugsnag.api_key"));
+app.use(bugsnag.requestHandler);
+app.use(bugsnag.errorHandler);
+
+// Safely ignore this. We use librato for data collection. 
+librato.configure({email: getConfig("librato.email"), token: getConfig("librato.token")});
+librato.start();
+process.once('SIGINT', function() {
+  librato.stop();
+  process.exit();
+});
+librato.on('error', function(err) {
+  console.error(err);
+});
+
+// This is where the fun begins
+var api_key = getConfig('mailgun.api_key');
+var domain = getConfig('mailgun.domain');
+var senderEmail = getConfig('reply.sender');
 
 console.log('Init mailgun. api_key=%s domain=%s sender=%s', api_key, domain, senderEmail);
 
@@ -20,11 +45,13 @@ var jsonParser = bodyParser.json();
 // create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-var templatePath = config.get('reply.template');
+var templatePath = getConfig('reply.template');
 console.log('Using template in %s', templatePath);
 var template = fs.readFileSync(templatePath, 'utf8');
 
 app.post('/', urlencodedParser, function(req, res) {
+    librato.increment('mailgun-noreply-requests');
+
     var fromEmail = req.body['from'];
     
     // This makes us well behaved. Don't reply if any of these headers are present.
@@ -37,26 +64,33 @@ app.post('/', urlencodedParser, function(req, res) {
 
     if (!hasLoops && !isCached) {
         sendMessage(req.body['from'], req.body['subject'], req.body['body-html'], function(err) {
-            res.send({status: 'replied'});
+            if(err != null) {
+                bugsnag.notify(err);
+                res.status(500).send({error: err});
+            } else {
+                librato.increment('mailgun-noreply-replied');
+                res.send({action: 'replied'}); 
+            }
         });
     } else {
         console.log('skipping');
-        res.send({status: 'skipped'});
+        librato.increment('mailgun-noreply-skipped');
+        res.send({action: 'skipped'});
     }
     
 });
 
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || process.env.port || 3000;
 var server = app.listen(port, function() {
-    console.log('Express is listening to http://localhost:%s', port);
+    console.log('Express is listening in port %s', port);
 });
 
 function isCachedEmail(fromEmail) {
     if (cache.get(fromEmail) != null)
         return true;
     
-    // Cache for 1 hour
-    cache.put(fromEmail, '1', 3600000);
+    // Cache for 15 minutes. Why 15 minutes? No particular reason, seems like a good number.
+    cache.put(fromEmail, '1', 900000);
     return false;
 }
 
